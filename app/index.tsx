@@ -142,6 +142,7 @@ export default function Home() {
             artist={song.artist}
             album={song.album}
             artwork={song.artwork}
+            uri={song.uri}
           />
         ))}
       </ScrollView>

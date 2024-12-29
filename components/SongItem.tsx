@@ -1,20 +1,30 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
 type SongItemProps = {
   title: string;
   artist: string;
   album?: string;
   artwork?: string;
-  onPress?: () => void;
+  uri?: string;
 };
 
-export default function SongItem({ title, artist, album, artwork, onPress }: SongItemProps) {
+export default function SongItem({ title, artist, album, artwork, uri }: SongItemProps) {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push({
+      pathname: '/player',
+      params: { title, artist, artwork, uri }
+    });
+  };
+
   return (
     <TouchableOpacity 
       className="flex-row items-center py-3"
-      onPress={onPress}
+      onPress={handlePress}
     >
       {artwork ? (
         <Image
