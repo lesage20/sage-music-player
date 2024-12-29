@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { usePlayer } from '../context/PlayerContext';
 
 type SongItemProps = {
   title: string;
@@ -13,8 +14,18 @@ type SongItemProps = {
 
 export default function SongItem({ title, artist, album, artwork, uri }: SongItemProps) {
   const router = useRouter();
+  const { setCurrentSong } = usePlayer();
 
   const handlePress = () => {
+    setCurrentSong({
+      id: 'current',
+      title,
+      artist,
+      album: album || '',
+      artwork,
+      uri,
+    });
+    
     router.push({
       pathname: '/player',
       params: { title, artist, artwork, uri }

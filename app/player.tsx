@@ -5,18 +5,27 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
+import { usePlayer } from '../context/PlayerContext';
 
 export default function Player() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [sound, setSound] = useState<Audio.Sound>();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { currentSong, setCurrentSong, sound, setSound, isPlaying, setIsPlaying } = usePlayer();
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
 
   const { title, artist, artwork, uri } = params;
 
   useEffect(() => {
+    if (!currentSong || currentSong.uri !== uri) {
+      setCurrentSong({
+        id: 'current',
+        title: title as string,
+        artist: artist as string,
+        artwork: artwork as string,
+        uri: uri as string,
+      });
+    }
     loadAudio();
     return () => {
       if (sound) {
