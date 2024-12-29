@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import SongItem from '../components/SongItem';
 import SongItemSkeleton from '../components/SongItemSkeleton';
 import { useState, useEffect, useMemo } from 'react';
@@ -15,11 +15,13 @@ type Song = {
   title: string;
   artist: string;
   album?: string;
-  artwork?: string;
+  artwork?: string | null;
   uri: string;
 };
 
-export default function Home() {
+export default function HomeScreen() {
+  const router = useRouter();
+  const [selectedTab, setSelectedTab] = useState(0);
   const [songs, setSongs] = useState<Song[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePlaylists } from '../../context/PlaylistContext';
 import SongItem from '../../components/SongItem';
 import { usePlayer } from '../../context/PlayerContext';
+import { StatusBar } from 'expo-status-bar';
 
 export default function PlaylistScreen() {
   const { id } = useLocalSearchParams();
@@ -65,7 +66,8 @@ export default function PlaylistScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-900">
+    <View className="flex-1 bg-gray-900 pt-12">
+      <StatusBar style="light" />
       <Stack.Screen
         options={{
           title: playlist.name,

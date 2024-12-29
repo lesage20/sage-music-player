@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'reac
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlaylists, Playlist } from '../context/PlaylistContext';
+import { StatusBar } from 'expo-status-bar';
 
 export default function PlaylistsScreen() {
   const router = useRouter();
@@ -45,7 +46,8 @@ export default function PlaylistsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-900">
+    <View className="flex-1 bg-gray-900 pt-12">
+      <StatusBar style="light" />
       <Stack.Screen
         options={{
           title: 'Mes Playlists',
