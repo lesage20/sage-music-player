@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { usePlayer } from '../context/PlayerContext';
-import { Audio } from 'expo-av';
 
 type SongItemProps = {
   title: string;
@@ -15,56 +14,22 @@ type SongItemProps = {
 
 export default function SongItem({ title, artist, album, artwork, uri }: SongItemProps) {
   const router = useRouter();
-  const { 
-    setCurrentSong, 
-    setSound, 
-    setIsPlaying, 
-    setPosition, 
-    setDuration,
-    sound: currentSound // Récupérer le son actuel
-  } = usePlayer();
+  const { loadAndPlaySong } = usePlayer();
 
   const handlePress = async () => {
-    try {
-      // Arrêter la lecture en cours si elle existe
-      if (currentSound) {
-        await currentSound.unloadAsync();
-      }
-
-      // Charger le nouvel audio
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: uri as string },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded) {
-            setPosition(status.positionMillis);
-            setDuration(status.durationMillis);
-            setIsPlaying(status.isPlaying);
-          }
-        }
-      );
-      
-      setSound(newSound);
-      setIsPlaying(true);
-      
-      // Mettre à jour la chanson courante
-      setCurrentSong({
-        id: 'current',
-        title,
-        artist,
-        album: album || '',
-        artwork,
-        uri,
-      });
-      
-      // Naviguer vers la page de lecture
-      router.push({
-        pathname: '/player',
-        params: { title, artist, artwork, uri }
-      });
-    } catch (error) {
-      console.error('Error loading audio:', error);
-    }
+    await loadAndPlaySong({
+      id: 'current',
+      title,
+      artist,
+      album,
+      artwork,
+      uri,
+    });
+    
+    router.push({
+      pathname: '/player',
+      params: { title, artist, artwork, uri }
+    });
   };
 
   return (

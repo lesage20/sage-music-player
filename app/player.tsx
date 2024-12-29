@@ -16,7 +16,9 @@ export default function Player() {
     isPlaying, 
     setIsPlaying,
     position,
-    duration
+    duration,
+    playNextSong,
+    playPreviousSong
   } = usePlayer();
 
   const { title, artist, artwork, uri } = params;
@@ -113,7 +115,7 @@ export default function Player() {
         <TouchableOpacity>
           <Ionicons name="shuffle" size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={playPreviousSong}>
           <Ionicons name="play-skip-back" size={36} color="white" />
         </TouchableOpacity>
         <TouchableOpacity 
@@ -126,7 +128,7 @@ export default function Player() {
             color="purple"
           />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={playNextSong}>
           <Ionicons name="play-skip-forward" size={36} color="white" />
         </TouchableOpacity>
         <TouchableOpacity>

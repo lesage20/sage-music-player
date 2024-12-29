@@ -1,10 +1,11 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import SongItem from '../components/SongItem';
 import { useState, useEffect } from 'react';
 import * as MediaLibrary from 'expo-media-library';
+import { usePlayer } from '../context/PlayerContext';
 
 const navigationTabs = ['Chansons', 'Vidéos', 'Artistes', 'Albums', 'Doss'];
 
@@ -12,61 +13,40 @@ type Song = {
   id: string;
   title: string;
   artist: string;
-  album: string;
-  uri?: string;
+  album?: string;
   artwork?: string;
+  uri: string;
 };
 
 export default function Home() {
   const [songs, setSongs] = useState<Song[]>([]);
+  const { setPlaylist } = usePlayer();
 
   useEffect(() => {
-    loadSongs();
-  }, []);
-
-  const loadSongs = async () => {
-    try {
-      // Demander la permission d'accéder à la médiathèque
-      const permission = await MediaLibrary.requestPermissionsAsync();
-      
-      if (!permission.granted) {
-        Alert.alert(
-          "Permission requise",
-          "L'application a besoin d'accéder à vos fichiers audio pour fonctionner."
+    (async () => {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status === 'granted') {
+        const media = await MediaLibrary.getAssetsAsync({
+          mediaType: 'audio',
+        });
+        const songsWithDetails = await Promise.all(
+          media.assets.map(async (asset) => {
+            const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+            return {
+              id: asset.id,
+              title: asset.filename.replace(/\.[^/.]+$/, ''),
+              artist: 'Unknown Artist',
+              uri: asset.uri,
+              artwork: assetInfo.localUri
+            };
+          })
         );
-        return;
+
+        setSongs(songsWithDetails);
+        setPlaylist(songsWithDetails);
       }
-
-      // Obtenir tous les fichiers audio
-      const media = await MediaLibrary.getAssetsAsync({
-        mediaType: 'audio',
-        first: 100 // Limite le nombre de résultats pour de meilleures performances
-      });
-
-      // Obtenir les détails de chaque asset pour avoir l'artwork
-      const songsWithDetails = await Promise.all(
-        media.assets.map(async (asset) => {
-          const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-          return {
-            id: asset.id,
-            title: asset.filename.replace(/\.[^/.]+$/, ""),
-            artist: asset.artist || 'Artiste inconnu',
-            album: asset.album || 'Album inconnu',
-            uri: asset.uri,
-            artwork: assetInfo.localUri
-          };
-        })
-      );
-
-      setSongs(songsWithDetails);
-    } catch (error) {
-      console.error('Erreur lors du chargement des chansons:', error);
-      Alert.alert(
-        "Erreur",
-        "Impossible de charger vos fichiers audio. Veuillez réessayer."
-      );
-    }
-  };
+    })();
+  }, []);
 
   return (
     <View className="flex-1 bg-gray-900">
