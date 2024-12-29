@@ -18,7 +18,11 @@ export default function Player() {
     position,
     duration,
     playNextSong,
-    playPreviousSong
+    playPreviousSong,
+    repeatMode,
+    setRepeatMode,
+    isShuffleOn,
+    setIsShuffleOn
   } = usePlayer();
 
   const { title, artist, artwork, uri } = params;
@@ -70,12 +74,13 @@ export default function Player() {
         {artwork ? (
           <Image
             source={{ uri: artwork as string }}
-            className="w-72 h-72 rounded-lg"
+            className="w-80 h-80 rounded-lg"
           />
         ) : (
           <LinearGradient
             colors={['#8B5CF6', '#3B82F6']}
-            className="w-72 h-72 rounded-lg items-center justify-center"
+            className="w-[90vw] h-[40vh] rounded-lg items-center justify-center"
+            style={{ borderRadius: 8 }}
           >
             <Ionicons name="musical-note" size={64} color="white" />
           </LinearGradient>
@@ -112,8 +117,16 @@ export default function Player() {
 
       {/* Controls */}
       <View className="flex-row items-center justify-between mb-12">
-        <TouchableOpacity>
-          <Ionicons name="shuffle" size={24} color="white" />
+        <TouchableOpacity 
+          onPress={() => {
+            setIsShuffleOn(!isShuffleOn);
+          }}
+        >
+          <Ionicons 
+            name="shuffle" 
+            size={24} 
+            color={isShuffleOn ? "#8B5CF6" : "white"} 
+          />
         </TouchableOpacity>
         <TouchableOpacity onPress={playPreviousSong}>
           <Ionicons name="play-skip-back" size={36} color="white" />
@@ -131,8 +144,26 @@ export default function Player() {
         <TouchableOpacity onPress={playNextSong}>
           <Ionicons name="play-skip-forward" size={36} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="repeat" size={24} color="white" />
+        <TouchableOpacity 
+          onPress={() => {
+            const modes: ('none' | 'all' | 'one')[] = ['none', 'all', 'one'];
+            const currentIndex = modes.indexOf(repeatMode);
+            const nextIndex = (currentIndex + 1) % modes.length;
+            setRepeatMode(modes[nextIndex]);
+          }}
+        >
+          <View>
+            <Ionicons 
+              name={repeatMode === 'one' ? "repeat-once" : "repeat"} 
+              size={24} 
+              color={repeatMode === 'none' ? "white" : "#8B5CF6"} 
+            />
+            {repeatMode === 'one' && (
+              <View className="absolute -top-2 -right-2">
+                <Text className="text-xs text-purple-500">1</Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
       </View>
     </View>

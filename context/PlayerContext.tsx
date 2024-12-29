@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useState } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 
 export type Song = {
@@ -26,6 +26,12 @@ type PlayerContextType = {
   playNextSong: () => Promise<void>;
   playPreviousSong: () => Promise<void>;
   loadAndPlaySong: (song: Song) => Promise<void>;
+  repeatMode: 'none' | 'all' | 'one';
+  setRepeatMode: (mode: 'none' | 'all' | 'one') => void;
+  isShuffleOn: boolean;
+  setIsShuffleOn: (on: boolean) => void;
+  shuffledPlaylist: Song[];
+  setShuffledPlaylist: (songs: Song[]) => void;
 };
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -37,6 +43,42 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playlist, setPlaylist] = useState<Song[]>([]);
+  const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none');
+  const [isShuffleOn, setIsShuffleOn] = useState(false);
+  const [shuffledPlaylist, setShuffledPlaylist] = useState<Song[]>([]);
+
+  // Fonction pour mélanger la playlist
+  const shufflePlaylist = (songs: Song[]) => {
+    const shuffled = [...songs];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setShuffledPlaylist(shuffled);
+  };
+
+  // Mettre à jour la playlist mélangée quand le shuffle est activé
+  useEffect(() => {
+    if (isShuffleOn && playlist.length > 0) {
+      shufflePlaylist(playlist);
+    }
+  }, [isShuffleOn, playlist]);
+
+  const getNextSongIndex = (currentIndex: number, currentPlaylist: Song[]) => {
+    if (repeatMode === 'one') return currentIndex;
+    if (currentIndex === currentPlaylist.length - 1) {
+      return repeatMode === 'all' ? 0 : -1;
+    }
+    return currentIndex + 1;
+  };
+
+  const getPreviousSongIndex = (currentIndex: number, currentPlaylist: Song[]) => {
+    if (repeatMode === 'one') return currentIndex;
+    if (currentIndex === 0) {
+      return repeatMode === 'all' ? currentPlaylist.length - 1 : -1;
+    }
+    return currentIndex - 1;
+  };
 
   const loadAndPlaySong = async (song: Song) => {
     try {
@@ -67,24 +109,48 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const playNextSong = async () => {
-    if (!currentSong || playlist.length === 0) return;
+    if (!currentSong) return;
     
-    const currentIndex = playlist.findIndex(song => song.uri === currentSong.uri);
+    const currentPlaylist = isShuffleOn ? shuffledPlaylist : playlist;
+    const currentIndex = currentPlaylist.findIndex(song => song.uri === currentSong.uri);
     if (currentIndex === -1) return;
     
-    const nextIndex = (currentIndex + 1) % playlist.length;
-    await loadAndPlaySong(playlist[nextIndex]);
+    const nextIndex = getNextSongIndex(currentIndex, currentPlaylist);
+    if (nextIndex === -1) return;
+
+    await loadAndPlaySong(currentPlaylist[nextIndex]);
   };
 
   const playPreviousSong = async () => {
-    if (!currentSong || playlist.length === 0) return;
+    if (!currentSong) return;
     
-    const currentIndex = playlist.findIndex(song => song.uri === currentSong.uri);
+    const currentPlaylist = isShuffleOn ? shuffledPlaylist : playlist;
+    const currentIndex = currentPlaylist.findIndex(song => song.uri === currentSong.uri);
     if (currentIndex === -1) return;
     
-    const previousIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-    await loadAndPlaySong(playlist[previousIndex]);
+    const previousIndex = getPreviousSongIndex(currentIndex, currentPlaylist);
+    if (previousIndex === -1) return;
+
+    await loadAndPlaySong(currentPlaylist[previousIndex]);
   };
+
+  // Gérer la fin de la lecture
+  useEffect(() => {
+    if (sound) {
+      sound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status.isLoaded) {
+          setPosition(status.positionMillis);
+          setDuration(status.durationMillis);
+          setIsPlaying(status.isPlaying);
+          
+          // Si la lecture est terminée
+          if (status.didJustFinish) {
+            playNextSong();
+          }
+        }
+      });
+    }
+  }, [sound]);
 
   return (
     <PlayerContext.Provider
@@ -104,6 +170,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         playNextSong,
         playPreviousSong,
         loadAndPlaySong,
+        repeatMode,
+        setRepeatMode,
+        isShuffleOn,
+        setIsShuffleOn,
+        shuffledPlaylist,
+        setShuffledPlaylist,
       }}
     >
       {children}
