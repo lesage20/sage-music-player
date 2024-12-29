@@ -1,14 +1,16 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { usePlayer } from '../context/PlayerContext';
 
 export default function MiniPlayer() {
   const router = useRouter();
+  const pathname = usePathname();
   const { currentSong, isPlaying, sound, setIsPlaying, position, duration } = usePlayer();
 
-  if (!currentSong) return null;
+  // Ne pas afficher le MiniPlayer sur la page de lecture
+  if (!currentSong || pathname === '/player') return null;
 
   const handlePlayPause = async () => {
     if (!sound) return;
@@ -30,6 +32,7 @@ export default function MiniPlayer() {
         artist: currentSong.artist,
         artwork: currentSong.artwork,
         uri: currentSong.uri,
+        fromMiniPlayer: 'true' // Indiquer que la navigation vient du MiniPlayer
       },
     });
   };

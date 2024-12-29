@@ -1,9 +1,8 @@
-import { View, Text, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Audio } from 'expo-av';
+import { useEffect } from 'react';
 import Slider from '@react-native-community/slider';
 import { usePlayer } from '../context/PlayerContext';
 
@@ -13,14 +12,11 @@ export default function Player() {
   const { 
     currentSong, 
     setCurrentSong, 
-    sound, 
-    setSound, 
+    sound,
     isPlaying, 
     setIsPlaying,
     position,
-    setPosition,
-    duration,
-    setDuration
+    duration
   } = usePlayer();
 
   const { title, artist, artwork, uri } = params;
@@ -35,46 +31,17 @@ export default function Player() {
         uri: uri as string,
       });
     }
-    loadAudio();
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
   }, [uri]);
 
-  const loadAudio = async () => {
-    try {
-      if (sound) await sound.unloadAsync();
-      
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: uri as string },
-        { shouldPlay: true },
-        onPlaybackStatusUpdate
-      );
-      
-      setSound(newSound);
-      setIsPlaying(true);
-    } catch (error) {
-      console.error('Error loading audio:', error);
-    }
-  };
-
-  const onPlaybackStatusUpdate = (status: any) => {
-    if (status.isLoaded) {
-      setPosition(status.positionMillis);
-      setDuration(status.durationMillis);
-      setIsPlaying(status.isPlaying);
-    }
-  };
-
   const togglePlayPause = async () => {
-    if (sound) {
-      if (isPlaying) {
-        await sound.pauseAsync();
-      } else {
-        await sound.playAsync();
-      }
+    if (!sound) return;
+    
+    if (isPlaying) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    } else {
+      await sound.playAsync();
+      setIsPlaying(true);
     }
   };
 
