@@ -147,23 +147,6 @@ export default function Home() {
         ))}
       </ScrollView>
 
-      {/* Mini Player */}
-      <View className="border-t border-gray-800 p-4 flex-row items-center">
-        <LinearGradient
-          colors={['#8B5CF6', '#3B82F6']}
-          className="w-12 h-12 rounded-full"
-        />
-        <View className="flex-1 ml-3">
-          <Text className="text-white">Titre en cours</Text>
-          <Text className="text-gray-400">Artiste</Text>
-        </View>
-        <TouchableOpacity className="mr-4">
-          <Ionicons name="play" size={24} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="play-skip-forward" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }

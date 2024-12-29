@@ -6,7 +6,7 @@ import { usePlayer } from '../context/PlayerContext';
 
 export default function MiniPlayer() {
   const router = useRouter();
-  const { currentSong, isPlaying, sound, setIsPlaying } = usePlayer();
+  const { currentSong, isPlaying, sound, setIsPlaying, position, duration } = usePlayer();
 
   if (!currentSong) return null;
 
@@ -34,22 +34,34 @@ export default function MiniPlayer() {
     });
   };
 
+  const progress = duration > 0 ? (position / duration) * 100 : 0;
+
   return (
-    <TouchableOpacity 
-      className="absolute bottom-0 left-0 right-0 bg-purple-900 border-t border-purple-800"
-      onPress={handlePress}
-    >
-      <View className="flex-row items-center justify-between px-4 py-2">
-        <View className="flex-row items-center flex-1">
+    <View className="absolute bottom-0 left-0 right-0 bg-purple-900 border-t border-purple-800">
+      {/* Progress Bar */}
+      <View className="w-full h-1 bg-purple-800">
+        <View 
+          className="h-full bg-white"
+          style={{ width: `${progress}%` }}
+        />
+      </View>
+
+      <TouchableOpacity 
+        className="flex-row items-center justify-between px-4 py-2"
+        onPress={handlePress}
+      >
+        <View className="flex-row items-center flex-1" >
           {currentSong.artwork ? (
             <Image
               source={{ uri: currentSong.artwork }}
-              className="w-12 h-12 rounded"
+              className="w-12 h-12"
+              style={{ borderRadius: 5 }}
             />
           ) : (
             <LinearGradient
               colors={['#8B5CF6', '#3B82F6']}
               className="w-12 h-12 rounded items-center justify-center"
+              style={{ borderRadius: 5 }}
             >
               <Ionicons name="musical-note" size={24} color="white" />
             </LinearGradient>
@@ -72,7 +84,7 @@ export default function MiniPlayer() {
             />
           </TouchableOpacity>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 }

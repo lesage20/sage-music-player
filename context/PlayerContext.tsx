@@ -17,6 +17,10 @@ type PlayerContextType = {
   setIsPlaying: (playing: boolean) => void;
   sound: Audio.Sound | null;
   setSound: (sound: Audio.Sound | null) => void;
+  position: number;
+  setPosition: (position: number) => void;
+  duration: number;
+  setDuration: (duration: number) => void;
 };
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -25,6 +29,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   return (
     <PlayerContext.Provider
@@ -35,6 +41,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying,
         sound,
         setSound,
+        position,
+        setPosition,
+        duration,
+        setDuration,
       }}
     >
       {children}

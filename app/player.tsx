@@ -10,9 +10,18 @@ import { usePlayer } from '../context/PlayerContext';
 export default function Player() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { currentSong, setCurrentSong, sound, setSound, isPlaying, setIsPlaying } = usePlayer();
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const { 
+    currentSong, 
+    setCurrentSong, 
+    sound, 
+    setSound, 
+    isPlaying, 
+    setIsPlaying,
+    position,
+    setPosition,
+    duration,
+    setDuration
+  } = usePlayer();
 
   const { title, artist, artwork, uri } = params;
 
