@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 
 export type Song = {
@@ -14,142 +14,135 @@ type PlayerContextType = {
   currentSong: Song | null;
   setCurrentSong: (song: Song | null) => void;
   isPlaying: boolean;
-  setIsPlaying: (playing: boolean) => void;
   sound: Audio.Sound | null;
-  setSound: (sound: Audio.Sound | null) => void;
-  position: number;
-  setPosition: (position: number) => void;
-  duration: number;
-  setDuration: (duration: number) => void;
+  loadAndPlaySong: (song: Song) => Promise<void>;
+  playSound: () => Promise<void>;
+  pauseSound: () => Promise<void>;
   playlist: Song[];
   setPlaylist: (songs: Song[]) => void;
   playNextSong: () => Promise<void>;
   playPreviousSong: () => Promise<void>;
-  loadAndPlaySong: (song: Song) => Promise<void>;
-  repeatMode: 'none' | 'all' | 'one';
-  setRepeatMode: (mode: 'none' | 'all' | 'one') => void;
-  isShuffleOn: boolean;
-  setIsShuffleOn: (on: boolean) => void;
-  shuffledPlaylist: Song[];
-  setShuffledPlaylist: (songs: Song[]) => void;
+  position: number;
+  duration: number;
 };
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
-export function PlayerProvider({ children }: { children: ReactNode }) {
+export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playlist, setPlaylistState] = useState<Song[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [playlist, setPlaylist] = useState<Song[]>([]);
-  const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none');
-  const [isShuffleOn, setIsShuffleOn] = useState(false);
-  const [shuffledPlaylist, setShuffledPlaylist] = useState<Song[]>([]);
-
-  // Fonction pour mélanger la playlist
-  const shufflePlaylist = (songs: Song[]) => {
-    const shuffled = [...songs];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    setShuffledPlaylist(shuffled);
-  };
-
-  // Mettre à jour la playlist mélangée quand le shuffle est activé
-  useEffect(() => {
-    if (isShuffleOn && playlist.length > 0) {
-      shufflePlaylist(playlist);
-    }
-  }, [isShuffleOn, playlist]);
-
-  const getNextSongIndex = (currentIndex: number, currentPlaylist: Song[]) => {
-    if (repeatMode === 'one') return currentIndex;
-    if (currentIndex === currentPlaylist.length - 1) {
-      return repeatMode === 'all' ? 0 : -1;
-    }
-    return currentIndex + 1;
-  };
-
-  const getPreviousSongIndex = (currentIndex: number, currentPlaylist: Song[]) => {
-    if (repeatMode === 'one') return currentIndex;
-    if (currentIndex === 0) {
-      return repeatMode === 'all' ? currentPlaylist.length - 1 : -1;
-    }
-    return currentIndex - 1;
-  };
 
   const loadAndPlaySong = async (song: Song) => {
     try {
-      // Arrêter la lecture en cours si elle existe
+      // Décharger le son précédent s'il existe
       if (sound) {
         await sound.unloadAsync();
       }
 
-      // Charger le nouvel audio
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: song.uri },
         { shouldPlay: true },
         (status) => {
           if (status.isLoaded) {
             setPosition(status.positionMillis);
-            setDuration(status.durationMillis);
+            setDuration(status.durationMillis || 0);
             setIsPlaying(status.isPlaying);
           }
         }
       );
-      
+
       setSound(newSound);
-      setIsPlaying(true);
       setCurrentSong(song);
+      setIsPlaying(true);
+
+      // Mettre à jour l'index si la chanson fait partie de la playlist
+      const songIndex = playlist.findIndex(s => s.uri === song.uri);
+      if (songIndex !== -1) {
+        setCurrentIndex(songIndex);
+      }
     } catch (error) {
-      console.error('Error loading audio:', error);
+      console.error('Error loading sound:', error);
+    }
+  };
+
+  const setPlaylist = (songs: Song[]) => {
+    setPlaylistState(songs);
+    // Si une chanson est en cours de lecture, trouver son index dans la nouvelle playlist
+    if (currentSong) {
+      const currentIndex = songs.findIndex(song => song.uri === currentSong.uri);
+      if (currentIndex !== -1) {
+        setCurrentIndex(currentIndex);
+      } else {
+        // Si la chanson n'est pas dans la playlist, commencer au début
+        setCurrentIndex(0);
+        setCurrentSong(songs[0]);
+      }
+    } else if (songs.length > 0) {
+      // Si aucune chanson n'est en cours, définir la première chanson
+      setCurrentIndex(0);
+      setCurrentSong(songs[0]);
+    }
+  };
+
+  const playSound = async () => {
+    if (sound) {
+      await sound.playAsync();
+      setIsPlaying(true);
+    }
+  };
+
+  const pauseSound = async () => {
+    if (sound) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
     }
   };
 
   const playNextSong = async () => {
-    if (!currentSong) return;
-    
-    const currentPlaylist = isShuffleOn ? shuffledPlaylist : playlist;
-    const currentIndex = currentPlaylist.findIndex(song => song.uri === currentSong.uri);
-    if (currentIndex === -1) return;
-    
-    const nextIndex = getNextSongIndex(currentIndex, currentPlaylist);
-    if (nextIndex === -1) return;
+    if (playlist.length === 0) return;
 
-    await loadAndPlaySong(currentPlaylist[nextIndex]);
+    const nextIndex = (currentIndex + 1) % playlist.length;
+    setCurrentIndex(nextIndex);
+    await loadAndPlaySong(playlist[nextIndex]);
   };
 
   const playPreviousSong = async () => {
-    if (!currentSong) return;
-    
-    const currentPlaylist = isShuffleOn ? shuffledPlaylist : playlist;
-    const currentIndex = currentPlaylist.findIndex(song => song.uri === currentSong.uri);
-    if (currentIndex === -1) return;
-    
-    const previousIndex = getPreviousSongIndex(currentIndex, currentPlaylist);
-    if (previousIndex === -1) return;
+    if (playlist.length === 0) return;
 
-    await loadAndPlaySong(currentPlaylist[previousIndex]);
+    const previousIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
+    setCurrentIndex(previousIndex);
+    await loadAndPlaySong(playlist[previousIndex]);
   };
 
-  // Gérer la fin de la lecture
+  // Mettre à jour la position toutes les 100ms pendant la lecture
   useEffect(() => {
     if (sound) {
-      sound.setOnPlaybackStatusUpdate((status: any) => {
-        if (status.isLoaded) {
-          setPosition(status.positionMillis);
-          setDuration(status.durationMillis);
-          setIsPlaying(status.isPlaying);
-          
-          // Si la lecture est terminée
-          if (status.didJustFinish) {
-            playNextSong();
+      const interval = setInterval(async () => {
+        if (isPlaying) {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            setPosition(status.positionMillis);
+            setDuration(status.durationMillis || 0);
           }
         }
-      });
+      }, 100);
+
+      return () => clearInterval(interval);
     }
+  }, [sound, isPlaying]);
+
+  // Nettoyer le son quand le composant est démonté
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
   }, [sound]);
 
   return (
@@ -158,24 +151,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         currentSong,
         setCurrentSong,
         isPlaying,
-        setIsPlaying,
         sound,
-        setSound,
-        position,
-        setPosition,
-        duration,
-        setDuration,
+        loadAndPlaySong,
+        playSound,
+        pauseSound,
         playlist,
         setPlaylist,
         playNextSong,
         playPreviousSong,
-        loadAndPlaySong,
-        repeatMode,
-        setRepeatMode,
-        isShuffleOn,
-        setIsShuffleOn,
-        shuffledPlaylist,
-        setShuffledPlaylist,
+        position,
+        duration,
       }}
     >
       {children}

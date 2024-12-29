@@ -126,6 +126,10 @@ export default function PlaylistScreen() {
                   artwork={song.artwork}
                   uri={song.uri}
                   album={song.album}
+                  onPress={() => {
+                    setPlaylist(playlist.songs);
+                    router.push('/player');
+                  }}
                 />
               </View>
               <TouchableOpacity

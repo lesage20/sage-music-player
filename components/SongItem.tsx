@@ -14,9 +14,10 @@ type SongItemProps = {
   album?: string;
   artwork?: string;
   uri: string;
+  onPress?: () => void;
 };
 
-export default function SongItem({ title, artist, album, artwork, uri }: SongItemProps) {
+export default function SongItem({ title, artist, album, artwork, uri, onPress }: SongItemProps) {
   const router = useRouter();
   const { loadAndPlaySong } = usePlayer();
   const { playlists, addSongToPlaylist } = usePlaylists();
@@ -31,10 +32,14 @@ export default function SongItem({ title, artist, album, artwork, uri }: SongIte
       uri,
     });
     
-    router.push({
-      pathname: '/player',
-      params: { title, artist, artwork, uri }
-    });
+    if (onPress) {
+      onPress();
+    } else {
+      router.push({
+        pathname: '/player',
+        params: { title, artist, artwork, uri }
+      });
+    }
   };
 
   const handleShare = async () => {
