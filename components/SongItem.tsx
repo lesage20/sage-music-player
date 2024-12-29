@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { usePlayer } from '../context/PlayerContext';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
+import SongDropdown from './SongDropdown';
 
 type SongItemProps = {
   title: string;
@@ -36,14 +37,12 @@ export default function SongItem({ title, artist, album, artwork, uri }: SongIte
 
   const handleShare = async () => {
     try {
-      // Vérifier si le partage est disponible sur cet appareil
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
         Alert.alert("Erreur", "Le partage n'est pas disponible sur cet appareil");
         return;
       }
 
-      // Créer un fichier temporaire avec les métadonnées dans le nom
       const fileUri = uri;
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       
@@ -52,11 +51,10 @@ export default function SongItem({ title, artist, album, artwork, uri }: SongIte
         return;
       }
 
-      // Partager le fichier
       await Sharing.shareAsync(fileUri, {
         dialogTitle: `Partager ${title}`,
         mimeType: 'audio/*',
-        UTI: 'public.audio' // pour iOS
+        UTI: 'public.audio'
       });
       
     } catch (error) {
@@ -66,6 +64,21 @@ export default function SongItem({ title, artist, album, artwork, uri }: SongIte
         "Une erreur est survenue lors du partage du fichier"
       );
     }
+  };
+
+  const handleAddToPlaylist = () => {
+    // TODO: Implémenter l'ajout à la playlist
+    Alert.alert("Info", "Fonctionnalité à venir : Ajouter à la playlist");
+  };
+
+  const handleAddToFavorites = () => {
+    // TODO: Implémenter l'ajout aux favoris
+    Alert.alert("Info", "Fonctionnalité à venir : Ajouter aux favoris");
+  };
+
+  const handleSetAsRingtone = () => {
+    // TODO: Implémenter la fonction sonnerie
+    Alert.alert("Info", "Fonctionnalité à venir : Définir comme sonnerie");
   };
 
   return (
@@ -94,12 +107,12 @@ export default function SongItem({ title, artist, album, artwork, uri }: SongIte
           {artist}{album ? ` • ${album}` : ''}
         </Text>
       </View>
-      <TouchableOpacity onPress={handleShare}>
-        <Ionicons name="share-outline" size={24} color="gray" />
-      </TouchableOpacity>
-      <TouchableOpacity className="ml-4">
-        <Ionicons name="ellipsis-vertical" size={24} color="gray" />
-      </TouchableOpacity>
+      <SongDropdown
+        onAddToPlaylist={handleAddToPlaylist}
+        onAddToFavorites={handleAddToFavorites}
+        onSetAsRingtone={handleSetAsRingtone}
+        onShare={handleShare}
+      />
     </TouchableOpacity>
   );
 }
