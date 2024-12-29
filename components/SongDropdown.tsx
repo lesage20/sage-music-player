@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 type SongDropdownProps = {
@@ -9,6 +9,11 @@ type SongDropdownProps = {
   onShare: () => void;
 };
 
+type Position = {
+  x: number;
+  y: number;
+};
+
 export default function SongDropdown({
   onAddToPlaylist,
   onAddToFavorites,
@@ -16,6 +21,9 @@ export default function SongDropdown({
   onShare,
 }: SongDropdownProps) {
   const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const windowWidth = Dimensions.get('window').width;
+  const menuWidth = 224; // 56 * 4 (w-56 in Tailwind)
 
   const menuItems = [
     {
@@ -52,9 +60,20 @@ export default function SongDropdown({
     },
   ];
 
+  const handlePress = (event: any) => {
+    // Obtenir les coordonnées du clic
+    const { pageX, pageY } = event.nativeEvent;
+    
+    // Ajuster la position X pour que le menu ne dépasse pas de l'écran
+    const x = Math.min(pageX, windowWidth - menuWidth - 16);
+    
+    setPosition({ x, y: pageY });
+    setVisible(true);
+  };
+
   return (
     <View>
-      <TouchableOpacity onPress={() => setVisible(true)}>
+      <TouchableOpacity onPress={handlePress}>
         <Ionicons name="ellipsis-vertical" size={24} color="gray" />
       </TouchableOpacity>
 
@@ -69,7 +88,14 @@ export default function SongDropdown({
           activeOpacity={1}
           onPress={() => setVisible(false)}
         >
-          <View className="absolute right-4 top-[25%] bg-gray-800 rounded-xl overflow-hidden w-56">
+          <View 
+            className="absolute bg-gray-800 rounded-xl overflow-hidden w-56"
+            style={{
+              left: position.x,
+              top: position.y,
+              transform: [{ translateY: -120 }] // Déplacer le menu vers le haut pour le centrer
+            }}
+          >
             {menuItems.map((item, index) => (
               <TouchableOpacity
                 key={item.text}
