@@ -11,7 +11,7 @@ export default function PlaylistScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { getPlaylistById, removeSongFromPlaylist, renamePlaylist } = usePlaylists();
-  const { setPlaylist } = usePlayer();
+  const { setPlaylist, loadAndPlaySong } = usePlayer();
 
   const playlist = getPlaylistById(id as string);
 
@@ -126,7 +126,8 @@ export default function PlaylistScreen() {
                   artwork={song.artwork}
                   uri={song.uri}
                   album={song.album}
-                  onPress={() => {
+                  onPress={async () => {
+                    await loadAndPlaySong(song);
                     setPlaylist(playlist.songs);
                     router.push('/player');
                   }}

@@ -1,20 +1,18 @@
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import { usePlayer } from '../context/PlayerContext';
+import { StatusBar } from 'expo-status-bar';
 
 export default function Player() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const { 
     currentSong, 
-    setCurrentSong, 
-    sound,
     isPlaying, 
-    setIsPlaying,
+    playSound,
+    pauseSound,
     position,
     duration,
     playNextSong,
@@ -25,31 +23,13 @@ export default function Player() {
     setIsShuffleOn
   } = usePlayer();
 
-  const { title, artist, artwork, uri } = params;
-
-  useEffect(() => {
-    if (!currentSong || currentSong.uri !== uri) {
-      setCurrentSong({
-        id: 'current',
-        title: title as string,
-        artist: artist as string,
-        artwork: artwork as string,
-        uri: uri as string,
-      });
-    }
-  }, [uri]);
-
-  const togglePlayPause = async () => {
-    if (!sound) return;
-    
-    if (isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
-    }
-  };
+  if (!currentSong) {
+    return (
+      <View className="flex-1 bg-purple-900 items-center justify-center">
+        <Text className="text-white">Aucune musique en cours de lecture</Text>
+      </View>
+    );
+  }
 
   const formatTime = (millis: number) => {
     const minutes = Math.floor(millis / 60000);
@@ -59,6 +39,7 @@ export default function Player() {
 
   return (
     <View className="flex-1 bg-purple-900 px-4">
+      <StatusBar style="light" />
       {/* Header */}
       <View className="flex-row items-center justify-between pt-12 pb-4">
         <TouchableOpacity onPress={() => router.back()}>
@@ -71,9 +52,9 @@ export default function Player() {
 
       {/* Cover Art */}
       <View className="items-center justify-center flex-1">
-        {artwork ? (
+        {currentSong.artwork ? (
           <Image
-            source={{ uri: artwork as string }}
+            source={{ uri: currentSong.artwork }}
             className="w-80 h-80 rounded-lg"
           />
         ) : (
@@ -89,8 +70,8 @@ export default function Player() {
 
       {/* Song Info */}
       <View className="items-center mb-8">
-        <Text className="text-white text-2xl font-bold mb-2">{title}</Text>
-        <Text className="text-gray-300 text-lg">{artist}</Text>
+        <Text className="text-white text-2xl font-bold mb-2">{currentSong.title}</Text>
+        <Text className="text-gray-300 text-lg">{currentSong.artist}</Text>
       </View>
 
       {/* Progress Bar */}
@@ -128,12 +109,14 @@ export default function Player() {
             color={isShuffleOn ? "#8B5CF6" : "white"} 
           />
         </TouchableOpacity>
+
         <TouchableOpacity onPress={playPreviousSong}>
           <Ionicons name="play-skip-back" size={36} color="white" />
         </TouchableOpacity>
+
         <TouchableOpacity 
           className="bg-white rounded-full p-4"
-          onPress={togglePlayPause}
+          onPress={() => isPlaying ? pauseSound() : playSound()}
         >
           <Ionicons 
             name={isPlaying ? "pause" : "play"} 
@@ -141,9 +124,11 @@ export default function Player() {
             color="purple"
           />
         </TouchableOpacity>
+
         <TouchableOpacity onPress={playNextSong}>
           <Ionicons name="play-skip-forward" size={36} color="white" />
         </TouchableOpacity>
+
         <TouchableOpacity 
           onPress={() => {
             const modes: ('none' | 'all' | 'one')[] = ['none', 'all', 'one'];
