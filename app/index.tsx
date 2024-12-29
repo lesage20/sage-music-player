@@ -1,9 +1,10 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import SongItem from '../components/SongItem';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import * as MediaLibrary from 'expo-media-library';
 
 const navigationTabs = ['Chansons', 'Vidéos', 'Artistes', 'Albums', 'Doss'];
 
@@ -12,41 +13,60 @@ type Song = {
   title: string;
   artist: string;
   album: string;
+  uri?: string;
+  artwork?: string;
 };
 
 export default function Home() {
-  const [songs, setSongs] = useState<Song[]>([
-    {
-      id: '1',
-      title: 'Ada Ehi ft Dena Mwana',
-      artist: 'Artiste inconnu',
-      album: 'Album inconnu'
-    },
-    {
-      id: '2',
-      title: 'Ada Ehi - Congratulations',
-      artist: 'Artiste inconnu',
-      album: 'Album inconnu'
-    },
-    {
-      id: '3',
-      title: 'ADA EHI - I TESTIFY',
-      artist: 'Artiste inconnu',
-      album: 'Album inconnu'
-    },
-    {
-      id: '4',
-      title: 'Ada Ehi - Settled',
-      artist: 'Artiste inconnu',
-      album: 'Album inconnu'
-    },
-    {
-      id: '5',
-      title: 'Ada Ehi - The Bridge',
-      artist: 'Artiste inconnu',
-      album: 'Album inconnu'
+  const [songs, setSongs] = useState<Song[]>([]);
+
+  useEffect(() => {
+    loadSongs();
+  }, []);
+
+  const loadSongs = async () => {
+    try {
+      // Demander la permission d'accéder à la médiathèque
+      const permission = await MediaLibrary.requestPermissionsAsync();
+      
+      if (!permission.granted) {
+        Alert.alert(
+          "Permission requise",
+          "L'application a besoin d'accéder à vos fichiers audio pour fonctionner."
+        );
+        return;
+      }
+
+      // Obtenir tous les fichiers audio
+      const media = await MediaLibrary.getAssetsAsync({
+        mediaType: 'audio',
+        first: 100 // Limite le nombre de résultats pour de meilleures performances
+      });
+
+      // Obtenir les détails de chaque asset pour avoir l'artwork
+      const songsWithDetails = await Promise.all(
+        media.assets.map(async (asset) => {
+          const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+          return {
+            id: asset.id,
+            title: asset.filename.replace(/\.[^/.]+$/, ""),
+            artist: asset.artist || 'Artiste inconnu',
+            album: asset.album || 'Album inconnu',
+            uri: asset.uri,
+            artwork: assetInfo.localUri
+          };
+        })
+      );
+
+      setSongs(songsWithDetails);
+    } catch (error) {
+      console.error('Erreur lors du chargement des chansons:', error);
+      Alert.alert(
+        "Erreur",
+        "Impossible de charger vos fichiers audio. Veuillez réessayer."
+      );
     }
-  ]);
+  };
 
   return (
     <View className="flex-1 bg-gray-900">
@@ -121,6 +141,7 @@ export default function Home() {
             title={song.title}
             artist={song.artist}
             album={song.album}
+            artwork={song.artwork}
           />
         ))}
       </ScrollView>
