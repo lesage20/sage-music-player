@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { usePlayer } from '../context/PlayerContext';
+import { usePlaylists } from '../context/PlaylistContext';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import SongDropdown from './SongDropdown';
@@ -12,16 +13,17 @@ type SongItemProps = {
   artist: string;
   album?: string;
   artwork?: string;
-  uri?: string;
+  uri: string;
 };
 
 export default function SongItem({ title, artist, album, artwork, uri }: SongItemProps) {
   const router = useRouter();
   const { loadAndPlaySong } = usePlayer();
+  const { playlists, addSongToPlaylist } = usePlaylists();
 
   const handlePress = async () => {
     await loadAndPlaySong({
-      id: 'current',
+      id: uri,
       title,
       artist,
       album,
@@ -67,8 +69,47 @@ export default function SongItem({ title, artist, album, artwork, uri }: SongIte
   };
 
   const handleAddToPlaylist = () => {
-    // TODO: Implémenter l'ajout à la playlist
-    Alert.alert("Info", "Fonctionnalité à venir : Ajouter à la playlist");
+    const playlistNames = playlists.map(p => ({
+      text: p.name,
+      onPress: () => {
+        addSongToPlaylist(p.id, {
+          id: uri,
+          title,
+          artist,
+          album,
+          artwork,
+          uri,
+        });
+        Alert.alert('Succès', 'Chanson ajoutée à la playlist');
+      }
+    }));
+
+    if (playlistNames.length === 0) {
+      Alert.alert(
+        'Aucune playlist',
+        "Créez d'abord une playlist pour pouvoir y ajouter des chansons.",
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Créer une playlist',
+            onPress: () => router.push('/playlists'),
+          },
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Ajouter à une playlist',
+      'Choisissez une playlist',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        ...playlistNames.map(item => ({
+          text: item.text,
+          onPress: item.onPress,
+        })),
+      ]
+    );
   };
 
   const handleAddToFavorites = () => {

@@ -62,7 +62,7 @@ export default function Player() {
       {/* Header */}
       <View className="flex-row items-center justify-between pt-12 pb-4">
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-down" size={30} color="white" />
+          <Ionicons name="chevron-back-outline" size={30} color="white" />
         </TouchableOpacity>
         <TouchableOpacity>
           <Ionicons name="ellipsis-vertical" size={24} color="white" />

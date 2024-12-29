@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo } from 'react';
 import * as MediaLibrary from 'expo-media-library';
 import { usePlayer } from '../context/PlayerContext';
 
-const navigationTabs = ['Chansons', 'Vidéos', 'Artistes', 'Albums', 'Doss'];
+const navigationTabs = ['Chansons', 'Vidéos', 'Artistes', 'Albums'];
 
 type Song = {
   id: string;
@@ -128,6 +128,27 @@ export default function Home() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
+
+      {/* Quick Access Buttons */}
+      <View className="flex-row px-4 py-4 space-x-4 gap-2">
+        <TouchableOpacity 
+          className="bg-purple-600 rounded-xl p-4 flex-1"
+          onPress={() => router.push('/playlists')}
+        >
+          <Ionicons name="list" size={24} color="white" />
+          <Text className="text-white mt-2">Playlists</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity className="bg-teal-600 rounded-xl p-4 flex-1">
+          <Ionicons name="heart" size={24} color="white" />
+          <Text className="text-white mt-2">Favoris</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity className="bg-orange-400 rounded-xl p-4 flex-1">
+          <Ionicons name="time" size={24} color="white" />
+          <Text className="text-white mt-2">Récents</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Liste des chansons */}

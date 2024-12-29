@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import "../tailwind.css";
 import { PlayerProvider } from '../context/PlayerContext';
+import { PlaylistProvider } from '../context/PlaylistContext';
 import MiniPlayer from '../components/MiniPlayer';
 import { View } from 'react-native';
 
@@ -33,22 +34,24 @@ export default function RootLayout() {
 
   return (
     <PlayerProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <View style={{ flex: 1 }}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" options={{ headerShown: false }} />
-            <Stack.Screen 
-              name="player" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal'
-              }} 
-            />
-          </Stack>
-          <MiniPlayer />
-        </View>
-      </ThemeProvider>
+      <PlaylistProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <View style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" options={{ headerShown: false }} />
+              <Stack.Screen 
+                name="player" 
+                options={{ 
+                  headerShown: false,
+                  presentation: 'modal'
+                }} 
+              />
+            </Stack>
+            <MiniPlayer />
+          </View>
+        </ThemeProvider>
+      </PlaylistProvider>
     </PlayerProvider>
   );
 }
