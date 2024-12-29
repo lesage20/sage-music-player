@@ -1,9 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import SongItem from '../components/SongItem';
+import SongItemSkeleton from '../components/SongItemSkeleton';
 import { useState, useEffect, useMemo } from 'react';
 import * as MediaLibrary from 'expo-media-library';
 import { usePlayer } from '../context/PlayerContext';
@@ -22,30 +22,38 @@ type Song = {
 export default function Home() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const { setPlaylist } = usePlayer();
 
   useEffect(() => {
     (async () => {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status === 'granted') {
-        const media = await MediaLibrary.getAssetsAsync({
-          mediaType: 'audio',
-        });
-        const songsWithDetails = await Promise.all(
-          media.assets.map(async (asset) => {
-            const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-            return {
-              id: asset.id,
-              title: asset.filename.replace(/\.[^/.]+$/, ''),
-              artist: 'Unknown Artist',
-              uri: asset.uri,
-              artwork: assetInfo.localUri
-            };
-          })
-        );
+      try {
+        setIsLoading(true);
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status === 'granted') {
+          const media = await MediaLibrary.getAssetsAsync({
+            mediaType: 'audio',
+          });
+          const songsWithDetails = await Promise.all(
+            media.assets.map(async (asset) => {
+              const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+              return {
+                id: asset.id,
+                title: asset.filename.replace(/\.[^/.]+$/, ''),
+                artist: 'Unknown Artist',
+                uri: asset.uri,
+                artwork: assetInfo.localUri
+              };
+            })
+          );
 
-        setSongs(songsWithDetails);
-        setPlaylist(songsWithDetails);
+          setSongs(songsWithDetails);
+          setPlaylist(songsWithDetails);
+        }
+      } catch (error) {
+        console.error('Error loading songs:', error);
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, []);
@@ -124,7 +132,12 @@ export default function Home() {
 
       {/* Liste des chansons */}
       <ScrollView className="flex-1 px-4">
-        {filteredSongs.length === 0 ? (
+        {isLoading ? (
+          // Afficher 10 skeletons pendant le chargement
+          [...Array(10)].map((_, index) => (
+            <SongItemSkeleton key={index} />
+          ))
+        ) : filteredSongs.length === 0 ? (
           <View className="flex-1 items-center justify-center py-8">
             <Ionicons name="search" size={48} color="gray" />
             <Text className="text-gray-400 mt-4 text-center">
