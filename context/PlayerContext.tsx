@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
+import * as Notifications from 'expo-notifications';
 
 export type Song = {
   id: string;
@@ -32,6 +33,15 @@ type PlayerContextType = {
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
+// Configuration basique des notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -44,6 +54,72 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isShuffleOn, setIsShuffleOn] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
 
+  // Initialiser les notifications
+  useEffect(() => {
+    async function setupNotifications() {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Notification permissions not granted');
+        return;
+      }
+
+      // Écouter les actions de notification
+      const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+        const actionId = response.notification.request.content.data?.action;
+        if (actionId) {
+          switch (actionId) {
+            case 'play':
+              playSound();
+              break;
+            case 'pause':
+              pauseSound();
+              break;
+            case 'next':
+              playNextSong();
+              break;
+            case 'previous':
+              playPreviousSong();
+              break;
+          }
+        }
+      });
+
+      return () => subscription.remove();
+    }
+
+    setupNotifications();
+  }, []);
+
+  // Mettre à jour la notification
+  const updateNotification = async () => {
+    if (!currentSong) {
+      await Notifications.dismissAllNotificationsAsync();
+      return;
+    }
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: currentSong.title,
+          body: currentSong.artist,
+          data: {
+            action: isPlaying ? 'pause' : 'play',
+            songUri: currentSong.uri,
+          },
+          sticky: true,
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
+  };
+
+  // Mettre à jour la notification quand l'état change
+  useEffect(() => {
+    updateNotification();
+  }, [currentSong, isPlaying]);
+
   const shufflePlaylist = () => {
     if (playlist.length === 0) return;
     const indices = Array.from(Array(playlist.length).keys());
@@ -51,7 +127,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const j = Math.floor(Math.random() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
-    // Ensure current song stays at current position
     if (currentSong) {
       const currentSongIndex = indices.indexOf(currentIndex);
       if (currentSongIndex !== -1) {
@@ -83,7 +158,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             setDuration(status.durationMillis || 0);
             setIsPlaying(status.isPlaying);
             
-            // Gérer la lecture automatique à la fin
             if (status.didJustFinish) {
               if (repeatMode === 'one') {
                 newSound.replayAsync();
@@ -94,6 +168,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           }
         }
       );
+
+      // Configurer l'audio pour fonctionner en arrière-plan
+      await Audio.setAudioModeAsync({
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
 
       setSound(newSound);
       setCurrentSong(song);
